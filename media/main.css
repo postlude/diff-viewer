@@ -1,0 +1,59 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { padding: 0 16px 24px; margin: 0; background: var(--vscode-editor-background, #1e1e1e); color: var(--vscode-editor-foreground, #ccc); font: var(--vscode-font-size, 13px) var(--vscode-font-family, sans-serif); }
+button { font: inherit; color: inherit; }
+button { border: 1px solid transparent; border-radius: 3px; padding: 3px 8px; background: var(--vscode-button-secondaryBackground, #37373d); cursor: pointer; white-space: nowrap; }
+button:hover { background: var(--vscode-button-secondaryHoverBackground, #45454c); }
+button:focus-visible, .resize-handle:focus-visible { outline: 1px solid var(--vscode-focusBorder, #007acc); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: default; }
+.primary { background: var(--vscode-button-background, #007acc); color: var(--vscode-button-foreground, white); }
+.primary:hover { background: var(--vscode-button-hoverBackground, #006bb3); }
+.unstage { color: var(--vscode-button-secondaryForeground, #fff); background: var(--vscode-button-secondaryBackground, #444); }
+.unstage:hover { background: var(--vscode-button-secondaryHoverBackground, #555); }
+.danger { color: var(--vscode-errorForeground, #f48771); }
+.danger.mutation { color: white; background: #c62828; font-family: var(--vscode-font-family, sans-serif); }
+.danger.mutation:hover { background: #a91f1f; }
+.actions .mutation { min-width: 28px; height: 26px; display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+.actions .icon-action { width: 32px; min-width: 32px; height: 26px; padding: 0; line-height: 16px; }
+.icon-action.danger { font-size: 20px; }
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 12px 0; }
+.toolbar strong { letter-spacing: 1px; white-space: nowrap; }
+.toolbar #settings { margin-left: auto; }
+#notice:empty { display: none; } #notice { padding: 10px 0; color: var(--vscode-errorForeground, #f48771); }
+.section { border: 1px solid var(--vscode-panel-border, #444); border-radius: 5px; margin-bottom: 16px; overflow: clip; }
+.section-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 9px 10px; background: var(--vscode-sideBarSectionHeader-background, #333); }
+.section-bar { cursor: pointer; }
+.section-bar:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
+.section-bar .actions { cursor: default; }
+.section-bar strong { font-size: 11px; color: var(--vscode-descriptionForeground, #aaa); }
+.count { font-size: 11px; border-radius: 10px; padding: 1px 6px; background: var(--vscode-badge-background, #555); color: var(--vscode-badge-foreground, white); }
+.actions { display: flex; gap: 5px; margin-left: auto; }
+.file + .file { border-top: 1px solid var(--vscode-panel-border, #444); }
+.file-bar { display: flex; align-items: center; gap: 7px; padding: 8px; background: var(--vscode-sideBar-background, #252526); cursor: pointer; }
+.file-bar:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
+.file-bar .actions { cursor: default; }
+.filename { text-align: left; background: transparent; overflow: hidden; text-overflow: ellipsis; min-width: 40px; padding: 2px; }
+.file-chevron { display: inline-block; width: 24px; flex: 0 0 24px; text-align: center; font-size: 24px; line-height: 18px; vertical-align: -2px; }
+.filename:hover { text-decoration: underline; }
+.status { font: 11px monospace; color: var(--vscode-gitDecoration-modifiedResourceForeground, #60b9ef); }
+.status-U, .status-A, .added { color: var(--vscode-gitDecoration-addedResourceForeground, #81c995); }
+.status-D, .removed { color: var(--vscode-gitDecoration-deletedResourceForeground, #f48771); }
+.added, .removed { font: 11px monospace; }
+.hunk { margin: 0 8px 9px 34px; border: 1px solid var(--vscode-panel-border, #444); border-radius: 3px; overflow: hidden; }
+.hunk-bar { display: flex; gap: 8px; align-items: center; padding: 5px 8px; background: var(--vscode-diffEditor-unchangedRegionBackground, #292d32); cursor: pointer; }
+.hunk-bar .actions { cursor: default; }
+.hunk-location { font: 12px var(--vscode-editor-font-family, monospace); background: transparent; overflow: hidden; text-overflow: ellipsis; text-align: left; color: var(--vscode-textLink-foreground, #75beff); min-width: 30px; }
+.hunk-content { overflow: auto; padding: 4px 0; background: var(--vscode-editor-background, #1e1e1e); color: var(--vscode-editor-foreground, #d4d4d4); font: var(--vscode-editor-font-size, 12px)/20px var(--vscode-editor-font-family, monospace); }
+.line { display: flex; min-width: 100%; width: max-content; min-height: 20px; }
+.line code { font: inherit; color: inherit; background: transparent; border: 0; white-space: pre; tab-size: 4; padding: 0 16px 0 0; }
+.old-number, .line-number { width: 48px; flex-shrink: 0; text-align: right; padding: 0 10px 0 0; color: var(--vscode-editorLineNumber-foreground, #858585); user-select: none; font: inherit; }
+.line-number { background: transparent; border: 0; border-radius: 0; }
+.addition { background: #1d4b25; }
+.deletion { background: #4b1d1d; }
+.addition .line-number { color: #70c779; }
+.deletion .line-number { color: #e08080; }
+.resize-handle { height: 6px; background: var(--vscode-sideBar-background, #252526); cursor: ns-resize; touch-action: none; }
+.resize-handle:hover, .resize-handle.dragging { background: var(--vscode-focusBorder, #007acc); }
+.empty { padding: 12px 18px; color: var(--vscode-descriptionForeground, #999); }
+.metadata { padding: 12px 18px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
+@media (max-width: 650px) { body { padding: 0 6px 16px; } .file-bar { flex-wrap: wrap; } .filename { flex: 1; } .file-bar .actions { width: 100%; justify-content: flex-end; } .hunk { margin-left: 8px; } .hunk-bar { flex-wrap: wrap; } .toolbar { flex-wrap: wrap; } }

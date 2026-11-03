@@ -1,0 +1,11 @@
+.vscode/**
+test/**
+node_modules/**
+.gitignore
+package-lock.json
+*.vsix
+
+.yarn/**
+.yarnrc.yml
+yarn.lock
+.pnp.*

@@ -1,0 +1,73 @@
+{
+  "name": "diff-viewer",
+  "displayName": "Diff Viewer",
+  "description": "All Git diffs in one continuous Stage / Unstage view.",
+  "version": "0.1.0",
+  "publisher": "postlude",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers"
+  ],
+  "main": "./src/extension.js",
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check src/extension.js && node --check src/git.js && node --check media/main.js",
+    "build": "yarn check && yarn test && vsce package --no-dependencies --allow-missing-repository --out diff-viewer-0.1.0.vsix"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "diffViewer.open",
+        "title": "Diff Viewer: Open",
+        "icon": "$(diff)"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "diffViewer.open",
+          "when": "scmProvider == git",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Diff Viewer",
+      "properties": {
+        "diffViewer.initialCollapsePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Glob patterns for files initially collapsed, such as *.dto.ts or generated/**. Patterns without / match filenames in any directory."
+        },
+        "diffViewer.contextLines": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Context lines around each hunk."
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onCommand:diffViewer.open"
+  ],
+  "packageManager": "yarn@4.9.2"
+}
