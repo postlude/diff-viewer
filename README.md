@@ -18,7 +18,7 @@ Yarn Berry 4.9.2를 사용하며 `.yarnrc.yml`에서 `nodeLinker: node-modules`�
 - 우측 미리보기 없이 Staged / Unstaged 영역에 파일별 diff를 연속 표시합니다.
 - Staged 파일은 기본적으로 접힙니다. Stage / Stage all / Stage hunk 성공 후에도 해당 Staged 파일이 접힙니다.
 - 파일 헤더의 화살표, 변경 수치, 빈 공간: 클릭하여 개별 파일 접기·펼치기. 파일명은 클릭하면 Diff Viewer와 같은 에디터 그룹에서 엽니다. Stage/Unstage/Discard 버튼은 각 작업을 실행합니다. STAGED FILES / UNSTAGED FILES 제목 줄을 클릭하면 파일 목록을 유지하면서 해당 영역의 모든 파일 diff를 접거나 펼칩니다.
-- Hunk 헤더 / 줄 번호: 해당 줄로 이동합니다. Staged 줄 번호는 Unstaged 변경을 반영해 작업 파일의 줄 번호로 변환합니다.
+- Hunk 헤더 영역: 클릭하여 해당 Hunk를 접거나 펼칩니다. Hunk 제목이나 줄 번호를 클릭하면 해당 줄로 이동합니다. Staged 줄 번호는 Unstaged 변경을 반영해 작업 파일의 줄 번호로 변환합니다.
 - Hunk 하단 막대: 드래그하여 높이 조절. 더블클릭하면 기본 높이로 복원합니다. 키보드로 막대에 포커스를 두고 위·아래 화살표로도 조절할 수 있습니다.
 - 파일·Hunk 단위 Stage / Unstage / Discard와 전체 파일 작업을 제공합니다. Discard는 확인 대화상자가 표시됩니다. 추적 파일의 Discard는 index의 staged 내용을 보존합니다. Untracked 파일은 휴지통으로 이동합니다.
 - Git 상태 변경과 파일 저장 시 자동 갱신합니다. 필요하면 Refresh를 누릅니다.

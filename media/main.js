@@ -2,9 +2,9 @@
 const vscode = acquireVsCodeApi();
 const app = document.getElementById('app'), notice = document.getElementById('notice');
 let data = { entries: [], patterns: [], revision: 0 }, busy = false, root = '';
-let collapsed = {}, heights = {}, previous = new Set();
+let collapsed = {}, collapsedHunks = {}, heights = {}, previous = new Set();
 const saved = vscode.getState() || {};
-function persist() { vscode.setState({ root, collapsed, heights, scroll: window.scrollY }); }
+function persist() { vscode.setState({ root, collapsed, collapsedHunks, heights, scroll: window.scrollY }); }
 function key(e) { return JSON.stringify([e.staged, e.path]); }
 function globRegex(glob) {
   let source = '';
@@ -62,15 +62,18 @@ function render() {
         else if (!e.hunks.length) card.append(el('pre', 'metadata', e.diff || 'Empty file or metadata-only change. Use the file action.'));
         for (const [index, h] of e.hunks.entries()) {
           const hkey = JSON.stringify([id, index, h.header]), hunk = el('div', 'hunk'), hhead = el('div', 'hunk-bar');
+          const hunkClosed = collapsedHunks[hkey] === true;
+          const toggleHunk = () => { collapsedHunks[hkey] = !collapsedHunks[hkey]; persist(); render(); };
           const openHunk = () => post('open', { path: e.path, staged: e.staged, line: Math.max(1, h.newStart) });
-          hhead.onclick = openHunk;
-          hhead.append(button(h.header, ev => { ev?.stopPropagation?.(); openHunk(); }, 'hunk-location'));
+          hhead.onclick = toggleHunk;
+          hhead.append(el('span', 'hunk-chevron', hunkClosed ? '▸' : '▾'), button(h.header, ev => { ev?.stopPropagation?.(); openHunk(); }, 'hunk-location'));
           const controls = el('div', 'actions');
           controls.onclick = ev => ev.stopPropagation();
           controls.append(iconButton(staged ? 'Unstage hunk' : 'Stage hunk', staged ? '−' : '+', () => action(staged ? 'unstage' : 'stage', e, index), `${staged ? 'unstage' : 'primary'} mutation`));
           if (!staged) controls.append(iconButton('Discard hunk', '⟲', () => action('discard', e, index), 'danger mutation'));
           for (const b of controls.querySelectorAll('button')) { b.disabled = busy || e.conflict || ['R', 'C'].includes(e.status); if (['R', 'C'].includes(e.status)) b.title = 'Use the file action for renames and copies'; }
           hhead.append(controls); hunk.append(hhead);
+          if (hunkClosed) { card.append(hunk); continue; }
           const content = el('div', 'hunk-content'); content.dataset.key = hkey;
           content.style.height = `${heights[hkey] || Math.min(360, Math.max(64, h.lines.length * 20 + 10))}px`;
           let old = h.oldStart, next = h.newStart;
@@ -101,7 +104,7 @@ function render() {
 window.addEventListener('message', ({ data: m }) => {
   if (m.type === 'update') {
     const changedRoot = root !== m.root;
-    if (changedRoot) { root = m.root; collapsed = saved.root === root ? saved.collapsed || {} : {}; heights = saved.root === root ? saved.heights || {} : {}; previous = new Set(); }
+    if (changedRoot) { root = m.root; collapsed = saved.root === root ? saved.collapsed || {} : {}; collapsedHunks = saved.root === root ? saved.collapsedHunks || {} : {}; heights = saved.root === root ? saved.heights || {} : {}; previous = new Set(); }
     const patterns = m.patterns.map(p => [globRegex(p), p.includes('/')]);
     for (const e of m.entries) { const k = key(e); if (!previous.has(k) || collapsed[k] === undefined) collapsed[k] = e.staged || patterns.some(([pattern, pathPattern]) => pattern.test(pathPattern ? e.path : e.path.split('/').at(-1))); }
     previous = new Set(m.entries.map(key)); data = m;

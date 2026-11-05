@@ -42,6 +42,7 @@ button:disabled { opacity: .4; cursor: default; }
 .hunk { margin: 0 8px 9px 34px; border: 1px solid var(--vscode-panel-border, #444); border-radius: 3px; overflow: hidden; }
 .hunk-bar { display: flex; gap: 8px; align-items: center; padding: 5px 8px; background: var(--vscode-diffEditor-unchangedRegionBackground, #292d32); cursor: pointer; }
 .hunk-bar .actions { cursor: default; }
+.hunk-chevron { display: inline-block; width: 14px; flex: 0 0 14px; text-align: center; color: var(--vscode-descriptionForeground, #999); }
 .hunk-location { font: 12px var(--vscode-editor-font-family, monospace); background: transparent; overflow: hidden; text-overflow: ellipsis; text-align: left; color: var(--vscode-textLink-foreground, #75beff); min-width: 30px; }
 .hunk-content { overflow: auto; padding: 4px 0; background: var(--vscode-editor-background, #1e1e1e); color: var(--vscode-editor-foreground, #d4d4d4); font: var(--vscode-editor-font-size, 12px)/20px var(--vscode-editor-font-family, monospace); }
 .line { display: flex; min-width: 100%; width: max-content; min-height: 20px; }
