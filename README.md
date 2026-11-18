@@ -15,6 +15,7 @@ Yarn Berry 4.9.2를 사용하며 `.yarnrc.yml`에서 `nodeLinker: node-modules`�
 
 ## 화면과 조작
 
+- 상단 `Worktree` 버튼에서 현재 저장소와 연결된 다른 경로의 Git 워크트리를 선택합니다. 목록에는 브랜치와 전체 경로가 표시됩니다. Diff 조회, 파일 열기, Stage / Unstage / Discard는 선택한 워크트리에서 실행됩니다. Cursor에 열려 있지 않은 워크트리는 화면이 표시되는 동안 3초마다 변경사항을 확인합니다.
 - 우측 미리보기 없이 Staged / Unstaged 영역에 파일별 diff를 연속 표시합니다.
 - Staged 파일은 기본적으로 접힙니다. Stage / Stage all / Stage hunk 성공 후에도 해당 Staged 파일이 접힙니다.
 - 파일 헤더의 화살표, 변경 수치, 빈 공간: 클릭하여 개별 파일 접기·펼치기. 파일명은 클릭하면 Diff Viewer와 같은 에디터 그룹에서 엽니다. Stage/Unstage/Discard 버튼은 각 작업을 실행합니다. STAGED FILES / UNSTAGED FILES 제목 줄을 클릭하면 파일 목록을 유지하면서 해당 영역의 모든 파일 diff를 접거나 펼칩니다.

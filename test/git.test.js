@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { git, fileDiff, patch, parseDiff, mapLine } = require('../src/git');
+const { git, fileDiff, patch, parseDiff, mapLine, listWorktrees, readChanges } = require('../src/git');
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'diff-viewer-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'diff-viewer-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await git(root, ['init', '-q']);
   await git(root, ['config', 'user.email', 'test@example.com']);
@@ -61,4 +61,42 @@ test('map staged lines through unstaged insertions and deletions', () => {
   assert.equal(mapLine(1, d.hunks), 1); assert.equal(mapLine(3, d.hunks), 4); assert.equal(mapLine(8, d.hunks), 9);
   const insertion = parseDiff('@@ -0,0 +1,2 @@\n+one\n+two\n');
   assert.equal(mapLine(1, insertion.hunks), 3);
+});
+
+test('linked worktrees preserve literal paths and isolate staged and unstaged changes', async t => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, 'tracked.txt'), 'initial\n');
+  await git(root, ['add', '.']); await git(root, ['commit', '-qm', 'initial']);
+  const linked = path.join(root, 'linked 한글 space\nworktree');
+  await git(root, ['worktree', 'add', '-qb', 'feature/worktree', linked]);
+  const worktrees = await listWorktrees(root);
+  assert.equal(worktrees.find(worktree => worktree.path === linked).branch, 'feature/worktree');
+  const renamed = 'renamed 한글 [file]\n.txt';
+  await git(linked, ['mv', 'tracked.txt', renamed]);
+  await fs.appendFile(path.join(linked, renamed), 'unstaged\n');
+  await fs.writeFile(path.join(linked, 'new [file].txt'), 'untracked\n');
+  const changes = await readChanges(linked);
+  assert.deepEqual(changes.find(entry => entry.staged), { path: renamed, original: 'tracked.txt', staged: true, status: 'R', conflict: false });
+  assert.equal(changes.find(entry => entry.path === renamed && !entry.staged).status, 'M');
+  assert.equal(changes.find(entry => entry.path === 'new [file].txt').status, 'U');
+  assert.match((await fileDiff(linked, renamed, false)).diff, /unstaged/);
+  assert.equal((await fileDiff(root, 'tracked.txt', false)).diff, '');
+  await git(linked, ['checkout', '--detach', '-q']);
+  assert.equal((await listWorktrees(root)).find(worktree => worktree.path === linked).detached, true);
+});
+
+test('status detects unmerged files and untracked files before the first commit', async t => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, 'new.txt'), 'new\n');
+  assert.equal((await readChanges(root))[0].status, 'U');
+  await git(root, ['add', '.']); await git(root, ['commit', '-qm', 'initial']);
+  const branch = (await git(root, ['branch', '--show-current'])).trim();
+  await git(root, ['checkout', '-qb', 'other']);
+  await fs.writeFile(path.join(root, 'new.txt'), 'other\n');
+  await git(root, ['commit', '-qam', 'other']);
+  await git(root, ['checkout', '-q', branch]);
+  await fs.writeFile(path.join(root, 'new.txt'), 'main\n');
+  await git(root, ['commit', '-qam', 'main']);
+  await git(root, ['merge', 'other'], undefined, [1]);
+  assert.deepEqual(await readChanges(root), [{ path: 'new.txt', original: 'new.txt', staged: false, status: '!', conflict: true }]);
 });

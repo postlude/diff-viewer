@@ -108,6 +108,8 @@ window.addEventListener('message', ({ data: m }) => {
     const patterns = m.patterns.map(p => [globRegex(p), p.includes('/')]);
     for (const e of m.entries) { const k = key(e); if (!previous.has(k) || collapsed[k] === undefined) collapsed[k] = e.staged || patterns.some(([pattern, pathPattern]) => pattern.test(pathPattern ? e.path : e.path.split('/').at(-1))); }
     previous = new Set(m.entries.map(key)); data = m;
+    document.getElementById('repositories').textContent = `Worktree · ${root.split(/[\\/]/).at(-1) || root}`;
+    document.getElementById('repositories').title = `Select worktree · ${root}`;
     notice.textContent = '';
     render(); if (changedRoot) window.scrollTo(0, saved.root === root ? saved.scroll || 0 : 0); persist();
   } else if (m.type === 'busy') { busy = m.value; render(); }
@@ -117,6 +119,7 @@ window.addEventListener('message', ({ data: m }) => {
     persist();
   }
 });
+document.getElementById('repositories').onclick = () => post('selectWorktree');
 document.getElementById('settings').onclick = () => post('settings');
 document.getElementById('refresh').onclick = () => post('refresh');
 window.addEventListener('scroll', persist, { passive: true });

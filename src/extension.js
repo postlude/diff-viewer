@@ -1,12 +1,11 @@
 const vscode = require('vscode');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { git, fileDiff, patch, mapLine } = require('./git');
+const { git, fileDiff, patch, mapLine, listWorktrees, readChanges } = require('./git');
 
 function activate(context) {
   let panel, repo, api, repoListener, timer, loading = false, pending = false, busy = false, revision = 0;
   let entries = [];
-  const status = { 0: 'M', 1: 'A', 2: 'D', 3: 'R', 4: 'C', 5: 'M', 6: 'D', 7: 'U', 9: 'A' };
   const config = () => vscode.workspace.getConfiguration('diffViewer', repo?.rootUri);
   const send = data => panel?.webview.postMessage(data);
   const schedule = () => { clearTimeout(timer); timer = setTimeout(() => refresh(), 250); };
@@ -14,25 +13,44 @@ function activate(context) {
     if (!panel || !repo) return;
     if (loading || busy) { pending = true; return; }
     loading = true;
+    const selected = repo, currentPanel = panel;
     try {
-      await repo.status();
-      const root = repo.rootUri.fsPath;
-      const next = [];
-      for (const [staged, changes] of [[true, repo.state.indexChanges], [false, [...repo.state.workingTreeChanges, ...repo.state.mergeChanges]]]) {
-        for (const c of changes) {
-          const file = path.relative(root, c.uri.fsPath).split(path.sep).join('/');
-          const e = { path: file, original: c.originalUri ? path.relative(root, c.originalUri.fsPath) : file, staged, status: status[c.status] || '!', conflict: c.status >= 10 };
-          try { Object.assign(e, await fileDiff(root, file, staged, config().get('contextLines', 3))); } catch (err) { e.error = err.message; e.hunks = []; }
-          next.push(e);
-        }
+      const root = selected.rootUri.fsPath;
+      const next = await readChanges(root);
+      const contextLines = config().get('contextLines', 3);
+      for (const e of next) {
+        try { Object.assign(e, await fileDiff(root, e.path, e.staged, contextLines)); } catch (err) { e.error = err.message; e.hunks = []; }
       }
+      if (repo !== selected || panel !== currentPanel) return;
       entries = next; revision++;
       const patterns = config().get('initialCollapsePatterns', []);
       await send({ type: 'update', entries, revision, root, patterns });
-    } catch (err) { await send({ type: 'error', message: err.message }); }
+    } catch (err) { if (repo === selected && panel === currentPanel) await send({ type: 'error', message: err.message }); }
     finally { loading = false; if (pending) { pending = false; schedule(); } }
   }
-  function setRepo(next) { repoListener?.dispose(); repo = next; entries = []; repoListener = repo.state.onDidChange(() => { if (!loading && !busy) schedule(); }); }
+  function setRepo(next) {
+    repoListener?.dispose(); repo = next; entries = []; revision++;
+    repoListener = repo.state?.onDidChange(() => { if (!loading && !busy) schedule(); });
+  }
+  async function selectWorktree() {
+    if (busy) return;
+    const worktrees = new Map();
+    const roots = new Set([repo.rootUri.fsPath, ...api.repositories.map(repository => repository.rootUri.fsPath)]);
+    for (const root of roots) {
+      for (const worktree of await listWorktrees(root)) worktrees.set(worktree.path, worktree);
+    }
+    const choices = [...worktrees.values()].map(worktree => ({
+      label: path.basename(worktree.path),
+      description: `${worktree.branch || (worktree.detached ? 'detached HEAD' : '')}${worktree.path === repo.rootUri.fsPath ? ' (current)' : ''}`,
+      detail: worktree.path,
+      worktree
+    }));
+    const choice = await vscode.window.showQuickPick(choices, { placeHolder: 'Select a worktree to view changes', matchOnDescription: true, matchOnDetail: true });
+    if (!choice || !panel || busy || choice.worktree.path === repo.rootUri.fsPath) return;
+    const rootUri = vscode.Uri.file(choice.worktree.path);
+    setRepo(api.repositories.find(repository => repository.rootUri.fsPath === rootUri.fsPath) || { rootUri });
+    schedule();
+  }
   async function handle(m) {
     let ownsBusy = false;
     try {
@@ -40,12 +58,14 @@ function activate(context) {
       if (m.type === 'refresh') { schedule(); return; }
       if (m.type === 'settings') { await vscode.commands.executeCommand('workbench.action.openSettings', 'diffViewer.initialCollapsePatterns'); return; }
       if (!repo) return;
+      if (m.type === 'selectWorktree') { await selectWorktree(); return; }
       const e = entries.find(e => e.path === m.path && e.staged === m.staged);
       if (m.type === 'open') {
-        if (!e) return;
+        if (!e || m.revision !== revision) return;
+        const selected = repo;
         let line = Number.isInteger(m.line) ? Math.max(1, m.line) : 1;
         if (e.staged) line = mapLine(line, (await fileDiff(repo.rootUri.fsPath, e.path, false)).hunks);
-        const uri = vscode.Uri.joinPath(repo.rootUri, e.path);
+        const uri = vscode.Uri.joinPath(selected.rootUri, e.path);
         try {
           const doc = await vscode.workspace.openTextDocument(uri);
           const editor = await vscode.window.showTextDocument(doc, { viewColumn: panel?.viewColumn || vscode.ViewColumn.Active, preview: true });
@@ -100,11 +120,13 @@ function activate(context) {
     panel = vscode.window.createWebviewPanel('diffViewer', 'Diff Viewer', vscode.ViewColumn.Active, { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')] });
     const web = panel.webview, nonce = crypto.randomBytes(16).toString('hex');
     const resource = f => web.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', f));
-    web.html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${web.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';"><link rel="stylesheet" href="${resource('main.css')}"><title>Diff Viewer</title></head><body><header class="toolbar"><strong>DIFF VIEWER</strong><button id="settings">Collapse patterns</button><button id="refresh">Refresh</button></header><div id="notice" role="status"></div><main id="app">Loading changes…</main><script nonce="${nonce}" src="${resource('main.js')}"></script></body></html>`;
+    web.html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${web.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';"><link rel="stylesheet" href="${resource('main.css')}"><title>Diff Viewer</title></head><body><header class="toolbar"><strong>DIFF VIEWER</strong><button id="repositories" title="Select worktree">Worktree</button><button id="settings">Collapse patterns</button><button id="refresh">Refresh</button></header><div id="notice" role="status"></div><main id="app">Loading changes…</main><script nonce="${nonce}" src="${resource('main.js')}"></script></body></html>`;
     panel.webview.onDidReceiveMessage(handle);
     panel.onDidDispose(() => { panel = undefined; repoListener?.dispose(); clearTimeout(timer); });
     panel.onDidChangeViewState(() => { if (panel?.visible) schedule(); });
   }));
+  const poll = setInterval(() => { if (panel?.visible && repo && !repo.state && !loading && !busy) schedule(); }, 3000);
+  context.subscriptions.push({ dispose: () => clearInterval(poll) });
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => { if (e.affectsConfiguration('diffViewer')) schedule(); }), vscode.workspace.onDidSaveTextDocument(schedule), { dispose: () => { clearTimeout(timer); repoListener?.dispose(); panel?.dispose(); } });
 }
 module.exports = { activate };

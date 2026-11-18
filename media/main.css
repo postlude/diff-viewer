@@ -18,6 +18,7 @@ button:disabled { opacity: .4; cursor: default; }
 .icon-action.danger { font-size: 20px; }
 .toolbar { display: flex; align-items: center; gap: 8px; padding: 12px 0; }
 .toolbar strong { letter-spacing: 1px; white-space: nowrap; }
+.toolbar #repositories { overflow: hidden; text-overflow: ellipsis; min-width: 60px; max-width: 40%; }
 .toolbar #settings { margin-left: auto; }
 #notice:empty { display: none; } #notice { padding: 10px 0; color: var(--vscode-errorForeground, #f48771); }
 .section { border: 1px solid var(--vscode-panel-border, #444); border-radius: 5px; margin-bottom: 16px; overflow: clip; }

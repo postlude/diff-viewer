@@ -12,6 +12,41 @@ function git(root, args, input, allowed = [0]) {
     child.stdin.end(input);
   });
 }
+async function listWorktrees(root) {
+  const output = await git(root, ['worktree', 'list', '--porcelain', '-z']);
+  const worktrees = [];
+  let current;
+  for (const field of output.split('\0')) {
+    if (field.startsWith('worktree ')) {
+      current = { path: field.slice(9) };
+      worktrees.push(current);
+    } else if (current && field.startsWith('branch ')) current.branch = field.slice(7).replace(/^refs\/heads\//, '');
+    else if (current && field === 'detached') current.detached = true;
+    else if (current && field === 'bare') current.bare = true;
+    else if (current && (field === 'prunable' || field.startsWith('prunable '))) current.prunable = true;
+  }
+  return worktrees.filter(worktree => !worktree.bare && !worktree.prunable);
+}
+async function readChanges(root) {
+  const output = await git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
+  const records = output.split('\0');
+  const entries = [];
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i];
+    if (!record) continue;
+    const xy = record.slice(0, 2), file = record.slice(3);
+    const original = /[RC]/.test(xy) ? records[++i] : file;
+    const conflict = ['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'].includes(xy);
+    if (conflict || xy === '??') {
+      entries.push({ path: file, original, staged: false, status: conflict ? '!' : 'U', conflict });
+      continue;
+    }
+    for (const [staged, status] of [[true, xy[0]], [false, xy[1]]]) {
+      if (status !== ' ' && status !== '!') entries.push({ path: file, original, staged, status, conflict: false });
+    }
+  }
+  return entries;
+}
 function parseDiff(diff) {
   const lines = diff.split('\n'); if (lines.at(-1) === '') lines.pop();
   const header = []; const hunks = []; let hunk;
@@ -51,4 +86,4 @@ function mapLine(line, hunks) {
   }
   return Math.max(1, line + offset);
 }
-module.exports = { git, parseDiff, patch, fileDiff, mapLine };
+module.exports = { listWorktrees, readChanges, git, parseDiff, patch, fileDiff, mapLine };

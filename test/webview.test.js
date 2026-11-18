@@ -19,6 +19,10 @@ test('webview renders continuous hunks, collapses hunks, applies glob patterns, 
   const file = (name, staged = false) => ({ path: name, staged, status: 'M', hunks: [{ header: '@@ -5 +5 @@', newStart: 5, lines: ['-old', '+new'] }, { header: '@@ -12 +12 @@', newStart: 12, lines: ['-before', '+after'] }] });
   const update = entries => handlers.message({ data: { type: 'update', entries, revision: 1, root: '/repo', patterns: ['*.json', '*.dto.ts'] } });
   update([file('a.ts'), file('b.ts'), file('lock.json'), file('staged.ts', true)]);
+  assert.equal(nodes.repositories.textContent, 'Worktree · repo');
+  assert.match(nodes.repositories.title, /\/repo/);
+  nodes.repositories.onclick();
+  assert.equal(messages.at(-1).type, 'selectWorktree');
   assert.equal(nodes.app.querySelectorAll('.hunk').length, 4);
   assert.equal(nodes.app.querySelectorAll('button').some(b => ['Collapse all', 'Expand all'].includes(b.textContent)), false);
   nodes.app.querySelectorAll('.section-bar')[1].onclick();
