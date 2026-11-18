@@ -9,3 +9,5 @@ package-lock.json
 .yarnrc.yml
 yarn.lock
 .pnp.*
+
+.cocoindex_code/**
